@@ -5,90 +5,92 @@ import axios from 'axios';
 import Alertmessage from './components/Alertmessage';
 import Map from './components/Map';
 import CityData from './components/CityData';
- import Weather from './components/Weather';
+import Weather from './components/Weather';
 
 export class App extends Component {
 
 
 
- 
-  constructor(props){
+
+  constructor(props) {
     super(props);
-    this.state={
-      mycityName : '',
-      cityData:{},
-      show:false,
-      alert:'',
-      error:''
+    this.state = {
+      mycityName: '',
+      cityData: {},
+      show: false,
+      alert: '',
+      error: '',
+      lat: '',
+      lon: ''
+
     }
   }
- 
- 
-   updateCityNameState= (e) =>{
-     this.setState({
-      mycityName :e.target.value,
-       
-     })
+
+
+  updateCityNameState = (e) => {
+    this.setState({
+      mycityName: e.target.value,
+
+    })
     //  console.log(this.state)
-   }
+  }
 
-   getCityData=async (e)=>{
-     e.preventDefault();
-     try{ const axiosData= await axios.get(`https://us1.locationiq.com/v1/search.php?key=pk.4cbbc812278b30d2b7dbaedbcc824622&q=${this.state.mycityName}&format=json`);
+  getCityData = async (e) => {
+    e.preventDefault();
+    await axios.get(`https://us1.locationiq.com/v1/search.php?key=pk.4cbbc812278b30d2b7dbaedbcc824622&q=${this.state.mycityName}&format=json`).then(locationRes => {
 
-     const myApi=await axios.get('http://localhost:8080/weather')
-    //  console.log( myApi)
-     this.setState({
-
-      cityData:axiosData.data[0],
-      weatherData:myApi.data,
-      show:true,
-      alert:false
-     })
-    
-    }
-   
-    catch (error){
       this.setState({
-        error:error.message,
-        alert:true
-      })
-    }
-    
+        cityData: locationRes.data[0],
+        lat: locationRes.data[0].lat,
+        lon: locationRes.data[0].lon,
+      });
+      axios.get(`http://localhost:8080/weather?lon=${this.state.lon}&lat=${this.state.lat}`).then(weatherRes => {
+        this.setState({
+          weatherData: weatherRes.data,
+          show: true,
+          alert: false
+        })
+
+      });
+    });
+
+
+      
+
 
     //  console.log(axiosData);
-   }
+  }
 
 
   render() {
     return (
       <div>
-         {this.state.alert&&
-       <Alertmessage
-       error={this.state.error}
-       />
-         }
-       <Searchforms
-       getCityData={this.getCityData}
-       updateCityNameState={this.updateCityNameState}
-       />
+        {this.state.alert &&
+          <Alertmessage
+            error={this.state.error}
+          />
+        }
+        <Searchforms
+          getCityData={this.getCityData}
+          updateCityNameState={this.updateCityNameState}
+        />
 
         {(this.state.show) &&
-        <>
-      
-        <Map
-        cityData={this.state.cityData}
-        />
-    
-     <CityData
-     cityData={this.state.cityData}
-     
-     />
-     <Weather
-     weather={this.state.weatherData}
-     />
+          <>
 
-        </>
+            <Map
+              cityData={this.state.cityData}
+            />
+
+            <CityData
+              cityData={this.state.cityData}
+
+            />
+            <Weather
+              weather={this.state.weatherData}
+            />
+
+          </>
         }
       </div>
     )
